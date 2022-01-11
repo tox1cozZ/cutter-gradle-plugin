@@ -1,5 +1,6 @@
 package ua.tox1cozz.cutter.configuration
 
+import groovy.lang.Closure
 import org.gradle.api.Action
 import org.gradle.api.Named
 import org.gradle.api.NamedDomainObjectContainer
@@ -27,4 +28,5 @@ open class TargetConfiguration @Inject constructor(
 
     val types: TargetTypeConfigurationContainer = objects.domainObjectContainer(TargetTypeConfiguration::class.java)
     fun types(config: Action<TargetTypeConfigurationContainer>) = config.execute(types)
+    fun types(config: Closure<Unit>) = types.configure(config)
 }

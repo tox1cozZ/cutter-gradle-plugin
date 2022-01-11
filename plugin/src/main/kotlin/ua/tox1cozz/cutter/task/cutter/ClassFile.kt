@@ -5,6 +5,7 @@ import java.nio.file.Path
 
 internal class ClassFile(
     val path: Path,
+    val originalBytes: ByteArray,
     val classNode: ClassNode,
     var changed: Boolean = false
 )

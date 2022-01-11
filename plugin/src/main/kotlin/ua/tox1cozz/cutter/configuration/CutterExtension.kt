@@ -1,5 +1,6 @@
 package ua.tox1cozz.cutter.configuration
 
+import groovy.lang.Closure
 import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -50,6 +51,7 @@ open class CutterExtension @Inject constructor(
 
     val targets: TargetConfigurationContainer = project.objects.domainObjectContainer(TargetConfiguration::class.java)
     fun targets(config: Action<TargetConfigurationContainer>) = config.execute(targets)
+    fun targets(config: Closure<Unit>) = targets.configure(config)
 
     init {
         val typeName = "cutter"
@@ -74,65 +76,6 @@ open class CutterExtension @Inject constructor(
             debug.types.register(typeName) { cutter ->
                 cutter.annotation.set(annotationType)
                 cutter.value.set("$valueType.${CutterTarget.DEBUG.name}")
-            }
-        }
-    }
-
-    fun minecraftForgeSideOnlyLegacy() {
-        clientServerTarget(
-            "minecraftForgeSideOnlyLegacy",
-            "cpw/mods/fml/relauncher/SideOnly",
-            "cpw/mods/fml/relauncher/Side"
-        )
-    }
-
-    // TODO: Заполнить 1.12 аннотации
-    fun minecraftForgeSideOnly() {
-        clientServerTarget(
-            "minecraftForgeSideOnly",
-            "cpw/mods/fml/relauncher/SideOnly",
-            "cpw/mods/fml/relauncher/Side"
-        )
-    }
-
-    fun minecraftForgeOnlyIn() {
-        clientServerTarget(
-            "minecraftForgeOnlyIn",
-            "net/minecraftforge/api/distmarker/OnlyIn",
-            "net/minecraftforge/api/distmarker/Dist",
-            serverValue = "DEDICATED_SERVER"
-        )
-    }
-
-    fun minecraftFabricEnvironment() {
-        clientServerTarget(
-            "minecraftFabricEnvironment",
-            "net/fabricmc/api/Environment",
-            "net/fabricmc/api/EnvType"
-        )
-    }
-
-    @JvmOverloads
-    fun clientServerTarget(
-        name: String,
-        annotationType: String,
-        valueType: String,
-        parameterName: String? = null,
-        clientValue: String = "CLIENT",
-        serverValue: String = "SERVER",
-    ) {
-        targets.named(TargetConfiguration.CLIENT_NAME) { client ->
-            client.types.register(name) { cutter ->
-                cutter.annotation.set(annotationType)
-                parameterName?.let { cutter.parameterName.set(it) }
-                cutter.value.set("$valueType.$clientValue")
-            }
-        }
-        targets.named(TargetConfiguration.SERVER_NAME) { server ->
-            server.types.register(name) { cutter ->
-                cutter.annotation.set(annotationType)
-                parameterName?.let { cutter.parameterName.set(it) }
-                cutter.value.set("$valueType.$serverValue")
             }
         }
     }

@@ -7,6 +7,7 @@ import org.gradle.api.file.FileTreeElement
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.file.RelativePath
 import org.gradle.api.specs.Spec
+import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
@@ -16,6 +17,7 @@ import org.objectweb.asm.tree.ClassNode
 import ua.tox1cozz.cutter.Constants
 import ua.tox1cozz.cutter.configuration.CutterExtension.Companion.cutterExtension
 import ua.tox1cozz.cutter.configuration.TargetConfiguration
+import ua.tox1cozz.cutter.task.cutter.transform.NewClassTransformer
 import ua.tox1cozz.cutter.util.PathExtensions.cleanDirectory
 import java.io.File
 import java.io.IOException
@@ -29,6 +31,7 @@ import javax.inject.Inject
 import kotlin.io.path.*
 
 @OptIn(ExperimentalPathApi::class)
+@CacheableTask
 abstract class CutterTask @Inject constructor(
     private val target: TargetConfiguration
 ) : DefaultTask() {
@@ -55,31 +58,37 @@ abstract class CutterTask @Inject constructor(
 
         val classes = processJar(archive, otherFilesDir).associateTo(mutableMapOf()) {
             val classNode = ClassNode()
-            val classReader = ClassReader(it.readBytes())
+            val classReader = ClassReader(it.second)
             classReader.accept(classNode, 0)
-            classNode.name to ClassFile(it, classNode)
+            classNode.name to ClassFile(it.first, it.second, classNode)
         }
-        val classTransformer = ClassTransformer(target, classes, cutterExtension)
-        classTransformer.transform()
-        if (cutterExtension.validation.get()) {
-            classTransformer.validate()
-        }
-        classes.values.forEach { classFile ->
+//        val classTransformer = ClassTransformer(target, classes, cutterExtension)
+//        classTransformer.transform()
+//        if (cutterExtension.validation.get()) {
+//            classTransformer.validate()
+//        }
+
+        val classTransformer = NewClassTransformer(target, classes, cutterExtension)
+        val transformedClasses = classTransformer.transform()
+        transformedClasses.forEach { classFile ->
             if (classFile.changed) {
                 val writer = ClassWriter(ClassWriter.COMPUTE_MAXS)
                 classFile.classNode.accept(writer)
-                classFile.path.parent.createDirectories()
-                classFile.path.writeBytes(writer.toByteArray())
-            } else {
+
                 val destPath = classesDir.resolve(classFile.path.toString())
-                Files.copy(classFile.path, destPath, COPY_ATTRIBUTES, REPLACE_EXISTING)
+                destPath.parent.createDirectories()
+                destPath.writeBytes(writer.toByteArray())
+            } else {
+                val destPath = otherFilesDir.resolve(classFile.path.toString())
+                destPath.parent.createDirectories()
+                destPath.writeBytes(classFile.originalBytes)
             }
         }
     }
 
-    private fun processJar(archive: Path, otherFilesDir: Path): MutableList<Path> {
+    private fun processJar(archive: Path, otherFilesDir: Path): MutableList<Pair<Path, ByteArray>> {
         val classesSpec = cutterExtension.packages.asSpec
-        val classes = mutableListOf<Path>()
+        val classes = mutableListOf<Pair<Path, ByteArray>>()
 
         FileSystems.newFileSystem(
             URI.create("jar:${archive.toUri()}"),
@@ -97,7 +106,7 @@ abstract class CutterTask @Inject constructor(
                 override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
                     val relativeFile = rootPath.relativize(file)
                     if (relativeFile.isTargetClassFile(classesSpec)) {
-                        classes.add(relativeFile)
+                        classes.add(Pair(relativeFile, relativeFile.readBytes()))
                     } else {
                         val otherFile = otherFilesDir.resolve(relativeFile.toString())
                         otherFile.parent.createDirectories()
