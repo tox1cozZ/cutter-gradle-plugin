@@ -30,7 +30,7 @@ internal class NewClassTransformer(
     }
 
     fun transform(): List<ClassFile> {
-        val transformedClasses = mutableListOf<ClassFile>()
+        val transformedClasses = mutableMapOf<String, ClassFile>()
 
         classes.values.forEach { classFile ->
             val classNode = classFile.classNode
@@ -43,7 +43,7 @@ internal class NewClassTransformer(
                 return@forEach
             }
 
-            transformedClasses.add(classFile)
+            transformedClasses[classNode.name] = classFile
 
             val deleteMethods = mutableListOf<MethodNode>()
             for (method in classNode.methods) {
@@ -71,7 +71,27 @@ internal class NewClassTransformer(
             }
         }
 
-        return transformedClasses
+        // Cut nested classes
+        transformedClasses.values.filter { classFile ->
+            val classNode = classFile.classNode
+            if (classNode.outerClass != null) {
+                val parentClass = transformedClasses[classNode.outerClass]?.classNode ?: return@filter true
+                if (classNode.outerMethod != null && classNode.outerMethodDesc != null) {
+                    return@filter parentClass.methods.none { it.name == classNode.outerMethod && it.desc == classNode.outerMethodDesc }
+                }
+            }
+            false
+        }.forEach { classFile ->
+            val classNode = classFile.classNode
+            if (classNode.outerMethod != null && classNode.outerMethodDesc != null) {
+                println("Cut nested class in parent ${classNode.outerClass} # (${classNode.outerMethod}${classNode.outerMethodDesc}): ${classNode.name}")
+            } else {
+                println("Cut nested class in parent ${classNode.outerClass}: ${classNode.name}")
+            }
+            transformedClasses.remove(classNode.name)
+        }
+
+        return transformedClasses.values.toList()
     }
 
     private fun removeLambdas(classNode: ClassNode, method: MethodNode, deleteMethods: MutableList<MethodNode>) {
@@ -115,9 +135,7 @@ internal class NewClassTransformer(
                 }
             }
 
-            if (onRemove != null) {
-                onRemove(it)
-            }
+            onRemove?.invoke(it)
             true
         }
         return cutElement
