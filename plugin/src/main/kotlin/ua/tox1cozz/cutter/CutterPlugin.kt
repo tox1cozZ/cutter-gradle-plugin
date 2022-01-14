@@ -35,7 +35,7 @@ abstract class CutterPlugin : Plugin<Project> {
                 cutterTask.configure {
                     it.archiveFile.set(it.cutterExtension.parentJarTask.get().archiveFile)
                     it.targetClassesDir.set(File(project.cutterDir, "transformed/${target.name}"))
-                    it.originalFilesDir.set(File(project.cutterDir, "files"))
+                    it.originalFilesDir.set(File(project.cutterDir, "files/${target.name}"))
 
                     it.inputs.property("removeFields", it.cutterExtension.removeFields)
                     it.inputs.property("packages", it.cutterExtension.packages.hashCode())

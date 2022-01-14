@@ -1,5 +1,7 @@
 package ua.tox1cozz.cutter.task.cutter
 
+import groovy.lang.Closure
+import org.gradle.api.Action
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
@@ -13,6 +15,7 @@ import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.tree.ClassNode
 import ua.tox1cozz.cutter.Constants
 import ua.tox1cozz.cutter.configuration.CutterExtension.Companion.cutterExtension
+import ua.tox1cozz.cutter.configuration.ReplaceTokensConfiguration
 import ua.tox1cozz.cutter.configuration.TargetConfiguration
 import ua.tox1cozz.cutter.task.cutter.transform.NewClassTransformer
 import ua.tox1cozz.cutter.util.PathExtensions.cleanDirectory
@@ -42,6 +45,11 @@ abstract class CutterTask @Inject constructor(
     @get:PathSensitive(PathSensitivity.ABSOLUTE)
     abstract val archiveFile: RegularFileProperty
 
+    @get:Nested
+    abstract val replaceTokens: ReplaceTokensConfiguration
+    fun replaceTokens(config: Action<ReplaceTokensConfiguration>) = config.execute(replaceTokens)
+    fun replaceTokens(config: Closure<Unit>) = project.configure(replaceTokens, config)
+
     @get:OutputDirectory
     internal abstract val targetClassesDir: DirectoryProperty
 
@@ -66,8 +74,9 @@ abstract class CutterTask @Inject constructor(
 //            classTransformer.validate()
 //        }
 
-        val classTransformer = NewClassTransformer(target, classes, cutterExtension)
+        val classTransformer = NewClassTransformer(target, cutterExtension, replaceTokens, classes)
         val transformedClasses = classTransformer.transform()
+        classTransformer.validation()
         transformedClasses.forEach { classFile ->
             if (classFile.changed) {
                 val writer = ClassWriter(ClassWriter.COMPUTE_MAXS)

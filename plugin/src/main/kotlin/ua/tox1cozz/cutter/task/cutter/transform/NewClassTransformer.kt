@@ -2,18 +2,17 @@ package ua.tox1cozz.cutter.task.cutter.transform
 
 import org.objectweb.asm.Handle
 import org.objectweb.asm.Opcodes
-import org.objectweb.asm.tree.AnnotationNode
-import org.objectweb.asm.tree.ClassNode
-import org.objectweb.asm.tree.InvokeDynamicInsnNode
-import org.objectweb.asm.tree.MethodNode
+import org.objectweb.asm.tree.*
 import ua.tox1cozz.cutter.configuration.CutterExtension
+import ua.tox1cozz.cutter.configuration.ReplaceTokensConfiguration
 import ua.tox1cozz.cutter.configuration.TargetConfiguration
 import ua.tox1cozz.cutter.task.cutter.ClassFile
 
 internal class NewClassTransformer(
     target: TargetConfiguration,
-    private val classes: Map<String, ClassFile>,
-    private val config: CutterExtension
+    private val config: CutterExtension,
+    private val replaceTokens: ReplaceTokensConfiguration,
+    private val classes: Map<String, ClassFile>
 ) {
 
     /*companion object {
@@ -91,7 +90,77 @@ internal class NewClassTransformer(
             transformedClasses.remove(classNode.name)
         }
 
+        replaceTokens(transformedClasses)
+
         return transformedClasses.values.toList()
+    }
+
+    fun validation() {
+
+    }
+
+    private fun replaceTokens(classes: MutableMap<String, ClassFile>) {
+        val tokens = replaceTokens.tokens.get()
+        if (tokens.isEmpty()) return
+
+        fun replaceInAnnotations(
+            classFile: ClassFile,
+            annotations: MutableList<AnnotationNode>?
+        ) {
+            if (annotations.isNullOrEmpty()) return
+            for (annotation in annotations) {
+                if (annotation.values.isNullOrEmpty()) continue
+                for (i in 0 until annotation.values.size step 2) {
+                    val value = annotation.values[i + 1]
+                    if (value is String && value in tokens) {
+                        annotation.values[i + 1] = tokens[value]
+                        classFile.changed = true
+                    } else if (value is MutableList<*> && value.isNotEmpty() && value.first() is String) {
+                        annotation.values[i + 1] = value.map {
+                            if (it in tokens) {
+                                classFile.changed = true
+                                return@map tokens[it]
+                            }
+                            it
+                        }
+                    }
+                }
+            }
+        }
+
+        for (classFile in classes.values) {
+            val classNode = classFile.classNode
+            replaceInAnnotations(classFile, classNode.visibleAnnotations)
+            replaceInAnnotations(classFile, classNode.invisibleAnnotations)
+
+            for (field in classNode.fields) {
+                if (field.value is String && field.value in tokens) {
+                    field.value = tokens[field.value]
+                    classFile.changed = true
+                }
+                replaceInAnnotations(classFile, field.visibleAnnotations)
+                replaceInAnnotations(classFile, field.invisibleAnnotations)
+            }
+
+            for (method in classNode.methods) {
+                for (insn in method.instructions) {
+                    if (insn is LdcInsnNode && insn.cst is String) {
+                        tokens.forEach { (key, value) ->
+                            val string = insn.cst as String
+                            if (string.contains(key)) {
+                                insn.cst = string.replace(key, value)
+                                classFile.changed = true
+                            }
+                        }
+                    }
+                }
+
+                replaceInAnnotations(classFile, method.visibleAnnotations)
+                replaceInAnnotations(classFile, method.invisibleAnnotations)
+                method.visibleParameterAnnotations?.forEach { replaceInAnnotations(classFile, it) }
+                method.invisibleParameterAnnotations?.forEach { replaceInAnnotations(classFile, it) }
+            }
+        }
     }
 
     private fun removeLambdas(classNode: ClassNode, method: MethodNode, deleteMethods: MutableList<MethodNode>) {
