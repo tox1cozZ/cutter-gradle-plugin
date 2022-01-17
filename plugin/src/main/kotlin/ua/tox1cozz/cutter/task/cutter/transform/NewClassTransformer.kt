@@ -78,6 +78,7 @@ internal class NewClassTransformer(
                 if (classNode.outerMethod != null && classNode.outerMethodDesc != null) {
                     return@filter parentClass.methods.none { it.name == classNode.outerMethod && it.desc == classNode.outerMethodDesc }
                 }
+                return@filter true
             }
             false
         }.forEach { classFile ->
