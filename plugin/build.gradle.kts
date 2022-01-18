@@ -12,6 +12,9 @@ configurations.compileOnly.get().extendsFrom(shadow)
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
+    implementation("org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.4.1") { // 0.4.1 0.2.0
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
+    }
 
     shadow("org.ow2.asm", "asm-tree", "9.2")
 

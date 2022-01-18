@@ -1,8 +1,10 @@
 package ua.tox1cozz.cutter.util
 
+import kotlinx.metadata.jvm.KotlinClassHeader
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type
 import org.objectweb.asm.tree.AbstractInsnNode
+import org.objectweb.asm.tree.AnnotationNode
 import org.objectweb.asm.tree.InsnList
 import org.objectweb.asm.tree.InsnNode
 
@@ -47,5 +49,36 @@ object AsmUtils {
             }
         }
         return list
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun AnnotationNode.getKotlinClassHeader(): KotlinClassHeader {
+        var kind: Int? = null
+        var metadataVersion: IntArray? = null
+        var bytecodeVersion: IntArray? = null
+        var data1: Array<String>? = null
+        var data2: Array<String>? = null
+        var extraString: String? = null
+        var packageName: String? = null
+        var extraInt: Int? = null
+
+        var i = 0
+        while (i < values.size) {
+            val name = values[i++]
+            val value = values[i++]
+
+            when (name) {
+                "k" -> kind = value as? Int
+                "mv" -> metadataVersion = (value as List<Int>).toIntArray()
+                "bv" -> bytecodeVersion = (value as List<Int>).toIntArray()
+                "xs" -> extraString = value as? String
+                "xi" -> extraInt = value as? Int
+                "pn" -> packageName = value as? String
+                "d1" -> data1 = (value as List<String>).toTypedArray()
+                "d2" -> data2 = (value as List<String>).toTypedArray()
+            }
+        }
+
+        return KotlinClassHeader(kind, metadataVersion, /*bytecodeVersion, */data1, data2, extraString, packageName, extraInt)
     }
 }

@@ -1,12 +1,15 @@
 package ua.tox1cozz.cutter.task.cutter.transform
 
+import kotlinx.metadata.jvm.KotlinClassMetadata
 import org.objectweb.asm.Handle
 import org.objectweb.asm.Opcodes
+import org.objectweb.asm.Type
 import org.objectweb.asm.tree.*
 import ua.tox1cozz.cutter.configuration.CutterExtension
 import ua.tox1cozz.cutter.configuration.ReplaceTokensConfiguration
 import ua.tox1cozz.cutter.configuration.TargetConfiguration
 import ua.tox1cozz.cutter.task.cutter.ClassFile
+import ua.tox1cozz.cutter.util.AsmUtils.getKotlinClassHeader
 
 internal class NewClassTransformer(
     target: TargetConfiguration,
@@ -28,6 +31,12 @@ internal class NewClassTransformer(
         annotation to TargetType(annotation, it.parameterName.get(), value[0], value[1])
     }
 
+    // TODO: Удалять вырезанные объекты из Metadata аннотации
+    private val kotlinClasses = mutableMapOf<String, KotlinClassFile>()
+
+    private val nestedKotlinClasses = mutableMapOf<String, String>()
+    private val innerClasses = mutableMapOf<String, String>()
+
     fun transform(): List<ClassFile> {
         val transformedClasses = mutableMapOf<String, ClassFile>()
 
@@ -35,10 +44,34 @@ internal class NewClassTransformer(
             val classNode = classFile.classNode
             val changeClass: (AnnotationNode) -> Unit = { classFile.changed = true }
 
+            val kotlinAnnotation = classNode.visibleAnnotations?.find { it.desc == Type.getDescriptor(Metadata::class.java) }
+            if (kotlinAnnotation != null) {
+                val header = kotlinAnnotation.getKotlinClassHeader()
+                val metadata = KotlinClassMetadata.read(header)!!
+                kotlinClasses[classNode.name] = KotlinClassFile(classFile, kotlinAnnotation, metadata)
+
+                if (metadata is KotlinClassMetadata.Class) {
+                    val klass = metadata.toKmClass()
+                    klass.companionObject?.let {
+                        val child = classNode.name + "$" + it
+                        nestedKotlinClasses[child] = classNode.name
+                    }
+                    for (nestedClass in klass.nestedClasses) {
+                        val child = classNode.name + "$" + nestedClass
+                        nestedKotlinClasses[child] = classNode.name
+                    }
+                }
+            }
+
             if (removeTargetAnnotations(classNode.visibleAnnotations, changeClass) ||
                 removeTargetAnnotations(classNode.invisibleAnnotations, changeClass)
             ) {
                 println("Cut class: ${classNode.name}")
+                classNode.innerClasses.forEach { innerClass ->
+                    if (innerClass.outerName == classNode.name) {
+                        innerClasses[innerClass.name] = classNode.name
+                    }
+                }
                 return@forEach
             }
 
@@ -70,15 +103,50 @@ internal class NewClassTransformer(
             }
         }
 
-        // Cut nested classes
-        transformedClasses.values.filter { classFile ->
+        removeNestedClasses(transformedClasses)
+        removeInnerClasses(transformedClasses)
+        removeNestedKotlinClasses(transformedClasses)
+        replaceTokens(transformedClasses)
+
+        return transformedClasses.values.toList()
+    }
+
+    fun validation() {
+
+    }
+
+    private fun removeInnerClasses(classes: MutableMap<String, ClassFile>) {
+        classes.values.removeIf { classFile ->
+            val classNode = classFile.classNode
+            val parentClass = innerClasses[classNode.name] ?: return@removeIf false
+            if (classes[parentClass] == null) {
+                println("Cut inner class in parent $parentClass: ${classNode.name}")
+                return@removeIf true
+            }
+            false
+        }
+    }
+
+    private fun removeNestedKotlinClasses(classes: MutableMap<String, ClassFile>) {
+        classes.values.removeIf { classFile ->
+            val classNode = classFile.classNode
+            val parentClass = nestedKotlinClasses[classNode.name] ?: return@removeIf false
+            if (classes[parentClass] == null) {
+                println("Cut nested kotlin class in parent $parentClass: ${classNode.name}")
+                return@removeIf true
+            }
+            false
+        }
+    }
+
+    private fun removeNestedClasses(classes: MutableMap<String, ClassFile>) {
+        classes.values.filter { classFile ->
             val classNode = classFile.classNode
             if (classNode.outerClass != null) {
-                val parentClass = transformedClasses[classNode.outerClass]?.classNode ?: return@filter true
+                val parentClass = classes[classNode.outerClass]?.classNode ?: return@filter true
                 if (classNode.outerMethod != null && classNode.outerMethodDesc != null) {
                     return@filter parentClass.methods.none { it.name == classNode.outerMethod && it.desc == classNode.outerMethodDesc }
                 }
-                return@filter true
             }
             false
         }.forEach { classFile ->
@@ -88,16 +156,15 @@ internal class NewClassTransformer(
             } else {
                 println("Cut nested class in parent ${classNode.outerClass}: ${classNode.name}")
             }
-            transformedClasses.remove(classNode.name)
+            classes.remove(classNode.name)
         }
 
-        replaceTokens(transformedClasses)
-
-        return transformedClasses.values.toList()
-    }
-
-    fun validation() {
-
+        // Kotlin nested classes
+        classes.values.removeIf { classFile ->
+            val classNode = classFile.classNode
+            val parentClass = classes[classNode.outerClass]?.classNode
+            false
+        }
     }
 
     private fun replaceTokens(classes: MutableMap<String, ClassFile>) {
@@ -217,4 +284,10 @@ private data class TargetType(
     val parameterName: String,
     val targetType: String,
     val targetValue: String
+)
+
+private data class KotlinClassFile(
+    val classFile: ClassFile,
+    val annotation: AnnotationNode,
+    val metadata: KotlinClassMetadata
 )
