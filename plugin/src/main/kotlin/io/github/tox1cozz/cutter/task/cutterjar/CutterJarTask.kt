@@ -2,6 +2,7 @@ package io.github.tox1cozz.cutter.task.cutterjar
 
 import io.github.tox1cozz.cutter.CutterPlugin
 import io.github.tox1cozz.cutter.configuration.TargetConfiguration
+import io.github.tox1cozz.cutter.task.TargetTask
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.util.PatternSet
@@ -9,7 +10,9 @@ import org.gradle.jvm.tasks.Jar
 import javax.inject.Inject
 
 @CacheableTask
-abstract class CutterJarTask @Inject constructor(target: TargetConfiguration) : Jar() {
+abstract class CutterJarTask @Inject constructor(
+    final override val target: TargetConfiguration
+) : Jar(), TargetTask {
 
     init {
         description = "Assembles a jar archive with ${target.name} target build"

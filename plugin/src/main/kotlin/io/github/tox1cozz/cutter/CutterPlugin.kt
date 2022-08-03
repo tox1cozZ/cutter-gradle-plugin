@@ -87,6 +87,7 @@ abstract class CutterPlugin : Plugin<Project> {
                     jar.archiveFile.get().asFile.also {
                         task.archiveFileName.set("${it.nameWithoutExtension}-${target.name}.${it.extension}")
                     }
+                    task.includeEmptyDirs = false
                 }
             }
         }

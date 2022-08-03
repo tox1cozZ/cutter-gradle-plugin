@@ -1,11 +1,12 @@
 package io.github.tox1cozz.cutter.task.cutter
 
+import groovy.lang.Closure
 import io.github.tox1cozz.cutter.CutterPlugin
 import io.github.tox1cozz.cutter.configuration.CutterExtension
 import io.github.tox1cozz.cutter.configuration.ReplaceTokensConfiguration
 import io.github.tox1cozz.cutter.configuration.TargetConfiguration
+import io.github.tox1cozz.cutter.task.TargetTask
 import io.github.tox1cozz.cutter.util.cleanDirectory
-import groovy.lang.Closure
 import org.gradle.api.Action
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
@@ -45,9 +46,9 @@ import kotlin.io.path.writeBytes
 
 @CacheableTask
 abstract class CutterTask @Inject constructor(
-    private val target: TargetConfiguration,
+    final override val target: TargetConfiguration,
     private val extension: CutterExtension
-) : DefaultTask() {
+) : DefaultTask(), TargetTask {
 
     init {
         description = "Classes transforming for ${target.name} target build"
