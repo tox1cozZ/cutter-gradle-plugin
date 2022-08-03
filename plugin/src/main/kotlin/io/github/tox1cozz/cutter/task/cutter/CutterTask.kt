@@ -1,10 +1,10 @@
-package com.github.tox1cozz.cutter.task.cutter
+package io.github.tox1cozz.cutter.task.cutter
 
-import com.github.tox1cozz.cutter.CutterPlugin
-import com.github.tox1cozz.cutter.configuration.CutterExtension
-import com.github.tox1cozz.cutter.configuration.ReplaceTokensConfiguration
-import com.github.tox1cozz.cutter.configuration.TargetConfiguration
-import com.github.tox1cozz.cutter.util.cleanDirectory
+import io.github.tox1cozz.cutter.CutterPlugin
+import io.github.tox1cozz.cutter.configuration.CutterExtension
+import io.github.tox1cozz.cutter.configuration.ReplaceTokensConfiguration
+import io.github.tox1cozz.cutter.configuration.TargetConfiguration
+import io.github.tox1cozz.cutter.util.cleanDirectory
 import groovy.lang.Closure
 import org.gradle.api.Action
 import org.gradle.api.DefaultTask

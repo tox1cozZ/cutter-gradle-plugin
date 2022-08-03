@@ -1,8 +1,8 @@
-package com.github.tox1cozz.cutter
+package io.github.tox1cozz.cutter
 
-import com.github.tox1cozz.cutter.configuration.CutterExtension
-import com.github.tox1cozz.cutter.task.cutter.CutterTask
-import com.github.tox1cozz.cutter.task.cutterjar.CutterJarTask
+import io.github.tox1cozz.cutter.configuration.CutterExtension
+import io.github.tox1cozz.cutter.task.cutter.CutterTask
+import io.github.tox1cozz.cutter.task.cutterjar.CutterJarTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.configurationcache.extensions.capitalized

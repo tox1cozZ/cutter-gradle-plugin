@@ -1,4 +1,4 @@
-package com.github.tox1cozz.cutter.configuration
+package io.github.tox1cozz.cutter.configuration
 
 import org.gradle.api.Action
 import org.gradle.api.Named
@@ -58,10 +58,7 @@ class TargetTypeAnnotationConfiguration(objects: ObjectFactory) {
 
 class TargetTypeExecutorConfiguration(objects: ObjectFactory) {
 
-    // com/github/tox1cozz/cutter/Cutter:execute(Ljava/lang/Enum;Ljava/lang/Runnable;)V
     val invoke: Property<String> = objects.property(String::class.java)
-
-    // com/github/tox1cozz/cutter/CutterTarget:DEBUG:Lcom/github/tox1cozz/cutter/CutterTarget;
     val value: Property<String> = objects.property(String::class.java)
 
     override fun equals(other: Any?): Boolean {

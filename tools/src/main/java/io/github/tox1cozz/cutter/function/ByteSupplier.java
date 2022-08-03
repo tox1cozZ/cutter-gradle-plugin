@@ -1,4 +1,4 @@
-package com.github.tox1cozz.cutter.function;
+package io.github.tox1cozz.cutter.function;
 
 @FunctionalInterface
 public interface ByteSupplier {

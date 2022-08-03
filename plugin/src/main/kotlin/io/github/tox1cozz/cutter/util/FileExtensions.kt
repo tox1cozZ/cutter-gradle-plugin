@@ -1,4 +1,4 @@
-package com.github.tox1cozz.cutter.util
+package io.github.tox1cozz.cutter.util
 
 import java.nio.file.Files
 import java.nio.file.Path
@@ -10,8 +10,6 @@ fun Path.deleteDirectoryRecursively() =
     Files.walk(this).sorted(Comparator.reverseOrder()).forEach { it.deleteExisting() }
 
 fun Path.cleanDirectory() {
-    if (exists()) {
-        deleteDirectoryRecursively()
-    }
+    if (exists()) deleteDirectoryRecursively()
     createDirectories()
 }

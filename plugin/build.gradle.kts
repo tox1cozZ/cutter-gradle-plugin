@@ -12,10 +12,7 @@ configurations.compileOnly.get().extendsFrom(shade)
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
-
     shade("org.ow2.asm", "asm-tree", "9.3")
-//    compileOnly("org.apache.ant", "ant", "1.10.12")
-
     api(project(":tools"))
 }
 
@@ -38,10 +35,10 @@ tasks.named<Jar>("jar") {
 gradlePlugin {
     plugins {
         create("cutter") {
-            id = "com.github.tox1cozz.cutter"
+            id = "io.github.tox1cozz.cutter"
             displayName = "Cutter Plugin"
             description = "A Gradle plugin for splitting code into client and server builds."
-            implementationClass = "com.github.tox1cozz.cutter.CutterPlugin"
+            implementationClass = "io.github.tox1cozz.cutter.CutterPlugin"
         }
     }
 }

@@ -1,4 +1,4 @@
-package com.github.tox1cozz.cutter.configuration
+package io.github.tox1cozz.cutter.configuration
 
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.MapProperty

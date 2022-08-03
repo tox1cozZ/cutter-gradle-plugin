@@ -1,8 +1,9 @@
-package com.github.tox1cozz.cutter.configuration
+package io.github.tox1cozz.cutter.configuration
 
-import com.github.tox1cozz.cutter.CutterTarget
-import com.github.tox1cozz.cutter.CutterTargetOnly
 import groovy.lang.Closure
+import io.github.tox1cozz.cutter.Cutter
+import io.github.tox1cozz.cutter.CutterTarget
+import io.github.tox1cozz.cutter.CutterTargetOnly
 import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.provider.ListProperty
@@ -56,17 +57,18 @@ abstract class CutterExtension @Inject constructor(private val project: Project)
 
     private fun initDefaultTargets() {
         val typeName = "cutter"
-        val annotationType = Type.getInternalName(CutterTargetOnly::class.java)
-        val targetType = Type.getInternalName(CutterTarget::class.java)
-        val invokeMethod = "$targetType:execute(Ljava/lang/Enum;Ljava/lang/Runnable;)V"
 
         fun TargetTypeConfiguration.registerType(targetName: String) {
+            val annotationType = Type.getInternalName(CutterTargetOnly::class.java)
+            val targetType = Type.getInternalName(CutterTarget::class.java)
+            val cutterType = Type.getInternalName(Cutter::class.java)
+
             annotation {
                 type.set(annotationType)
                 value.set("$targetType.$targetName")
             }
             executor {
-                invoke.set(invokeMethod)
+                invoke.set("$cutterType:execute:(Ljava/lang/Enum;Ljava/lang/Runnable;)V")
                 value.set("$targetType:$targetName:L$targetType;")
             }
         }
@@ -91,33 +93,69 @@ abstract class CutterExtension @Inject constructor(private val project: Project)
         }
     }
 
-    fun minecraftForgeSideOnlyLegacy() = clientServerTarget(
+    fun minecraftForgeSideOnlyLegacy() = clientServerTargetAnnotation(
         name = "minecraftForgeSideOnlyLegacy",
         annotationType = "cpw/mods/fml/relauncher/SideOnly",
         valueType = "cpw/mods/fml/relauncher/Side"
     )
 
-    fun minecraftForgeSideOnly() = clientServerTarget(
+    fun minecraftForgeSideOnly() = clientServerTargetAnnotation(
         name = "minecraftForgeSideOnly",
         annotationType = "net/minecraftforge/fml/relauncher/SideOnly",
         valueType = "net/minecraftforge/fml/relauncher/Side"
     )
 
-    fun minecraftForgeOnlyIn() = clientServerTarget(
-        name = "minecraftForgeOnlyIn",
-        annotationType = "net/minecraftforge/api/distmarker/OnlyIn",
-        valueType = "net/minecraftforge/api/distmarker/Dist",
-        serverValue = "DEDICATED_SERVER"
-    )
+    fun minecraftForgeOnlyIn() {
+        val typeName = "minecraftForgeOnlyIn"
+        val targetType = "net/minecraftforge/api/distmarker/Dist"
 
-    fun minecraftFabricEnvironment() = clientServerTarget(
+        clientServerTargetAnnotation(
+            name = typeName,
+            annotationType = "net/minecraftforge/api/distmarker/OnlyIn",
+            valueType = targetType,
+            serverValue = "DEDICATED_SERVER"
+        )
+
+        fun TargetTypeConfiguration.registerKotlinForForgeExecutor(targetName: String) {
+            executor {
+                invoke.set("thedarkcolour/kotlinforforge/forge/ForgeKt:runWhenOn:(Lnet/minecraftforge/api/distmarker/Dist;Lkotlin/jvm/functions/Function0;)V")
+                value.set("$targetType:$targetName:L$targetType;")
+            }
+        }
+
+        fun TargetTypeConfiguration.registerForgeDistExecutor(executorMethod: String, targetName: String) {
+            executor {
+                invoke.set("net/minecraftforge/fml/DistExecutor:$executorMethod:(Lnet/minecraftforge/api/distmarker/Dist;Ljava/util/function/Supplier;)V")
+                value.set("$targetType:$targetName:L$targetType;")
+            }
+        }
+
+        targets.named(TargetConfiguration.CLIENT_NAME) { client ->
+            client.types.named(typeName) {
+                it.registerKotlinForForgeExecutor("CLIENT")
+                it.registerForgeDistExecutor("runWhenOn", "CLIENT")
+                it.registerForgeDistExecutor("unsafeRunWhenOn", "CLIENT")
+                it.registerForgeDistExecutor("safeRunWhenOn", "CLIENT")
+            }
+        }
+        targets.named(TargetConfiguration.SERVER_NAME) { server ->
+            server.types.named(typeName) {
+                it.registerKotlinForForgeExecutor("DEDICATED_SERVER")
+                it.registerForgeDistExecutor("runWhenOn", "DEDICATED_SERVER")
+                it.registerForgeDistExecutor("unsafeRunWhenOn", "DEDICATED_SERVER")
+                it.registerForgeDistExecutor("safeRunWhenOn", "DEDICATED_SERVER")
+            }
+        }
+    }
+
+    fun minecraftFabricEnvironment() = clientServerTargetAnnotation(
         name = "minecraftFabricEnvironment",
         annotationType = "net/fabricmc/api/Environment",
         valueType = "net/fabricmc/api/EnvType"
     )
 
     @JvmOverloads
-    fun clientServerTarget(
+    fun clientServerTargetAnnotation(
         name: String,
         annotationType: String,
         valueType: String,

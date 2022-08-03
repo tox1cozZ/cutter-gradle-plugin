@@ -1,4 +1,4 @@
-package com.github.tox1cozz.cutter.task.cutter
+package io.github.tox1cozz.cutter.task.cutter
 
 import org.objectweb.asm.tree.ClassNode
 import java.nio.file.Path

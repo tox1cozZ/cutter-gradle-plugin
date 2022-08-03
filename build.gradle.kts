@@ -5,7 +5,7 @@ plugins {
 }
 
 allprojects {
-    group = "com.github.tox1cozz.cutter"
+    group = "io.github.tox1cozz.cutter"
     version = "0.1.0"
 
     repositories {

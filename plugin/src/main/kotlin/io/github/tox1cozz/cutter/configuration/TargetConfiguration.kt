@@ -1,4 +1,4 @@
-package com.github.tox1cozz.cutter.configuration
+package io.github.tox1cozz.cutter.configuration
 
 import groovy.lang.Closure
 import org.gradle.api.Action

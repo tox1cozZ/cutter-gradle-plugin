@@ -1,9 +1,9 @@
-package com.github.tox1cozz.cutter;
+package io.github.tox1cozz.cutter;
 
-import com.github.tox1cozz.cutter.function.ByteSupplier;
-import com.github.tox1cozz.cutter.function.CharSupplier;
-import com.github.tox1cozz.cutter.function.FloatSupplier;
-import com.github.tox1cozz.cutter.function.ShortSupplier;
+import io.github.tox1cozz.cutter.function.ByteSupplier;
+import io.github.tox1cozz.cutter.function.CharSupplier;
+import io.github.tox1cozz.cutter.function.FloatSupplier;
+import io.github.tox1cozz.cutter.function.ShortSupplier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

@@ -1,7 +1,7 @@
-package com.github.tox1cozz.cutter.task.cutterjar
+package io.github.tox1cozz.cutter.task.cutterjar
 
-import com.github.tox1cozz.cutter.CutterPlugin
-import com.github.tox1cozz.cutter.configuration.TargetConfiguration
+import io.github.tox1cozz.cutter.CutterPlugin
+import io.github.tox1cozz.cutter.configuration.TargetConfiguration
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.util.PatternSet

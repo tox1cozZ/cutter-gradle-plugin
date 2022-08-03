@@ -1,4 +1,4 @@
-package com.github.tox1cozz.cutter;
+package io.github.tox1cozz.cutter;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
