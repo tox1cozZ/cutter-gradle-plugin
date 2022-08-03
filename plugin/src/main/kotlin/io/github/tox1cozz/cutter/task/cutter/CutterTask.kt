@@ -17,6 +17,7 @@ import org.gradle.api.file.RelativePath
 import org.gradle.api.specs.Spec
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
@@ -46,7 +47,7 @@ import kotlin.io.path.writeBytes
 
 @CacheableTask
 abstract class CutterTask @Inject constructor(
-    final override val target: TargetConfiguration,
+    @get:Internal final override val target: TargetConfiguration,
     private val extension: CutterExtension
 ) : DefaultTask(), TargetTask {
 
