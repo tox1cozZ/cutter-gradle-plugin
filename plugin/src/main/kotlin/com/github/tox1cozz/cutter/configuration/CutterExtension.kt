@@ -5,9 +5,10 @@ import com.github.tox1cozz.cutter.CutterTargetOnly
 import groovy.lang.Closure
 import org.gradle.api.Action
 import org.gradle.api.Project
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.util.PatternSet
+import org.gradle.jvm.tasks.Jar
 import org.objectweb.asm.Type
 import javax.inject.Inject
 
@@ -15,18 +16,10 @@ abstract class CutterExtension @Inject constructor(private val project: Project)
 
     val validation: Property<Boolean> = project.objects.property(Boolean::class.java).convention(true)
     val verbose: Property<Boolean> = project.objects.property(Boolean::class.java).convention(true)
-//    val jars: ListProperty<Jar> = project.objects.listProperty(Jar::class.java)
-//        .value(project.provider { listOf(project.tasks.named("jar", Jar::class.java).get()) })
-
-    val jars: SetProperty<String> = project.objects.setProperty(String::class.java).empty()
+    val jars: ListProperty<Jar> = project.objects.listProperty(Jar::class.java)
+        .value(project.provider { listOf(project.tasks.named("jar", Jar::class.java).get()) })
 
     val packages = PatternSet()
-
-//    fun processJar(jarTask: String) {
-//        val task = project.tasks.named(jarTask).get()
-//        check(task is Jar) { "Task with name '$jarTask' is not a Jar type" }
-//        jars.add(task)
-//    }
 
     val targets: TargetConfigurationContainer = project.objects.domainObjectContainer(TargetConfiguration::class.java)
     fun targets(config: Action<TargetConfigurationContainer>) = config.execute(targets)
@@ -44,20 +37,33 @@ abstract class CutterExtension @Inject constructor(private val project: Project)
         initDefaultTargets()
     }
 
+    fun processJar(jarTask: Jar) = processJar(jarTask.name)
+
+    fun processJar(jarTaskName: String) {
+        jars.add(
+            project.provider {
+                project.tasks.getByName(jarTaskName).let {
+                    check(it is Jar) { "Task with name '$jarTaskName' is not a Jar type" }
+                    it
+                }
+            }
+        )
+    }
+
     private fun initDefaultTargets() {
         val typeName = "cutter"
         val annotationType = Type.getInternalName(CutterTargetOnly::class.java)
         val targetType = Type.getInternalName(CutterTarget::class.java)
-        val invoke = "$targetType:execute(Ljava/lang/Enum;Ljava/lang/Runnable;)V"
+        val invokeMethod = "$targetType:execute(Ljava/lang/Enum;Ljava/lang/Runnable;)V"
 
         fun TargetTypeConfiguration.registerType(targetName: String) {
-            annotations.register(typeName) { annotation ->
-                annotation.type.set(annotationType)
-                annotation.value.set("$targetType.$targetName")
+            annotation {
+                type.set(annotationType)
+                value.set("$targetType.$targetName")
             }
-            executors.register(typeName) { executor ->
-                executor.invoke.set(invoke)
-                executor.value.set("$targetType:$targetName:L$targetType;")
+            executor {
+                invoke.set(invokeMethod)
+                value.set("$targetType:$targetName:L$targetType;")
             }
         }
 
@@ -115,11 +121,11 @@ abstract class CutterExtension @Inject constructor(private val project: Project)
         clientValue: String = "CLIENT",
         serverValue: String = "SERVER",
     ) {
-        fun TargetTypeConfiguration.registerAnnotation(value: String) {
-            annotations.register(name) { annotation ->
-                annotation.type.set(annotationType)
-                parameterName?.also { param -> annotation.parameter.set(param) }
-                annotation.value.set("$valueType.$value")
+        fun TargetTypeConfiguration.registerAnnotation(annotationValue: String) {
+            annotation {
+                type.set(annotationType)
+                parameterName?.also { parameter.set(it) }
+                value.set("$valueType.$annotationValue")
             }
         }
 

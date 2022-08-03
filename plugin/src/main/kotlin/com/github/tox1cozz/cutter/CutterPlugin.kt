@@ -6,7 +6,6 @@ import com.github.tox1cozz.cutter.task.cutterjar.CutterJarTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.configurationcache.extensions.capitalized
-import org.gradle.jvm.tasks.Jar
 import java.io.File
 
 abstract class CutterPlugin : Plugin<Project> {
@@ -21,62 +20,56 @@ abstract class CutterPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         val extension = project.extensions.create(EXTENSION, CutterExtension::class.java, project)
         project.afterEvaluate {
-
+            setup(it, extension)
         }
+    }
 
+    private fun setup(project: Project, extension: CutterExtension) {
         extension.targets.all { target ->
             if (target.cutAlways.get()) {
                 return@all
             }
 
-            extension.jars.get().forEach { jarTaskName ->
-                val jar = project.tasks.named(jarTaskName, Jar::class.java).get()
-                val jarName = if (jar.name == "jar") "" else jar.name.capitalized()
-                println("Registered jar: $jarTaskName")
-
-                val cutterName = "cutter${target.name.capitalized()}$jarName"
-                val cutterTask = project.tasks.register(cutterName, CutterTask::class.java, target, extension)
-
-                val cutterJarName = "${target.name}Jar${jarName}"
-                val cutterJarTask = project.tasks.register(cutterJarName, CutterJarTask::class.java, target)
-
+            val buildTask = project.tasks.getByName("build")
+            extension.jars.get().forEach { jar ->
+                val jarTaskName = jar.name
+                val taskPostfix = if (jar.name == "jar") "" else jar.name.capitalized()
                 val cutterDir = File(project.buildDir, NAME)
-                project.afterEvaluate {
-                    cutterTask.configure {
-                        it.archiveFile.set(jar.archiveFile)
-                        it.targetClassesDir.set(File(cutterDir, "transformed/${target.name}"))
-                        it.originalFilesDir.set(File(cutterDir, "files/${target.name}"))
 
-                        it.inputs.property("packages", extension.packages.hashCode())
+                val cutterName = "cutter${target.name.capitalized()}$taskPostfix"
+                val cutterTask = project.tasks.create(cutterName, CutterTask::class.java, target, extension)
 
-                        it.inputs.property("target", target.name)
-                        it.inputs.property("target.cutAlways", target.cutAlways)
-                        target.types.forEach { type ->
-                            val typeKey = "target.type.${type.name}"
-                            it.inputs.property(typeKey, type.name)
-                            type.annotations.forEach { annotation ->
-                                val annotationKey = "$typeKey.annotation.${annotation.name}"
-                                it.inputs.property("$annotationKey.type", annotation.type)
-                                it.inputs.property("$annotationKey.parameter", annotation.parameter)
-                                it.inputs.property("$annotationKey.value", annotation.value)
-                            }
-                            type.executors.forEach { executor ->
-                                val executorKey = "$typeKey.executor.${executor.name}"
-                                it.inputs.property("$executorKey.invoke", executor.invoke)
-                                it.inputs.property("$executorKey.value", executor.value)
-                            }
-                        }
+                val cutterJarName = "${target.name}Jar${taskPostfix}"
+                val cutterJarTask = project.tasks.create(cutterJarName, CutterJarTask::class.java, target)
+
+                cutterTask.also {
+                    it.archiveFile.set(jar.archiveFile)
+                    it.targetClassesDir.set(File(cutterDir, "$jarTaskName/transformed/${target.name}"))
+                    it.originalFilesDir.set(File(cutterDir, "$jarTaskName/files/${target.name}"))
+
+                    it.inputs.property("packages", extension.packages.hashCode())
+
+                    it.inputs.property("target", target.name)
+                    it.inputs.property("target.cutAlways", target.cutAlways)
+                    target.types.forEach { type ->
+                        val typeKey = "target.type.${type.name}"
+                        it.inputs.property(typeKey, type.name)
+                        it.inputs.property("$typeKey.annotations", type.annotations.get().hashCode())
+                        it.inputs.property("$typeKey.executors", type.executors.get().hashCode())
                     }
+                }
 
-                    cutterJarTask.configure { task ->
-                        task.from(cutterTask.get().targetClassesDir)
-                        task.from(cutterTask.get().originalFilesDir)
-                        task.manifest.from(jar.manifest.effectiveManifest)
+                cutterJarTask.also { task ->
+                    task.dependsOn(cutterTask)
+                    buildTask.dependsOn(task)
 
-                        task.archiveClassifier.set(target.name)
-                        jar.archiveFile.get().asFile.also {
-                            task.archiveFileName.set("${it.nameWithoutExtension}-${target.name}.${it.extension}")
-                        }
+                    task.from(cutterTask.targetClassesDir)
+                    task.from(cutterTask.originalFilesDir)
+                    task.manifest.from(jar.manifest.effectiveManifest)
+
+                    task.archiveClassifier.set(target.name)
+                    jar.archiveFile.get().asFile.also {
+                        task.archiveFileName.set("${it.nameWithoutExtension}-${target.name}.${it.extension}")
                     }
                 }
             }
