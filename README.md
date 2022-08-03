@@ -30,4 +30,17 @@ cutter {
         minecraftFabricEnvironment() // Fabric
     }
 }
+
+afterEvaluate {
+    // Replace string constants in classes
+    tasks.withType(CutterTask) {
+        replaceTokens {
+            token '${VERSION}', project.version
+        }
+    }
+
+    serverJar {
+        excludeMinecraftAssets() // Exclude assets directory (keep lang files)
+    }
+}
 ```
