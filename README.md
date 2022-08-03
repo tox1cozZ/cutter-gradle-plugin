@@ -24,9 +24,9 @@ dependencies {
 cutter {
     packages.include("your/package/for/processing/**")
     targets {
-        // minecraftForgeSideOnlyLegacy() // Forge 1.7.10 and older
-        // minecraftForgeSideOnly() // Forge 1.8-1.13
-        // minecraftFabricEnvironment() // Fabric
+        minecraftForgeSideOnlyLegacy() // Forge 1.7.10 and older
+        minecraftForgeSideOnly() // Forge 1.8-1.13
+        minecraftFabricEnvironment() // Fabric
         minecraftForgeOnlyIn() // Forge 1.14+
     }
 }
