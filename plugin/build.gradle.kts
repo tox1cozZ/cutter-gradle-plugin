@@ -11,7 +11,7 @@ val shade: Configuration by configurations.creating
 configurations.compileOnly.get().extendsFrom(shade)
 
 dependencies {
-    implementation(kotlin("stdlib-jdk8"))
+    shade(kotlin("stdlib-jdk8")) // implementation
     shade("org.ow2.asm", "asm-tree", "9.3")
     api(project(":tools"))
 }
