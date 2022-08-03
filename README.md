@@ -26,8 +26,8 @@ cutter {
     targets {
         minecraftForgeSideOnlyLegacy() // Forge 1.7.10 and older
         minecraftForgeSideOnly() // Forge 1.8-1.13
-        minecraftFabricEnvironment() // Fabric
         minecraftForgeOnlyIn() // Forge 1.14+
+        minecraftFabricEnvironment() // Fabric
     }
 }
 ```
