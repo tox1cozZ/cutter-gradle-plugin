@@ -3,13 +3,14 @@ package io.github.tox1cozz.cutter
 import io.github.tox1cozz.cutter.configuration.CutterExtension
 import io.github.tox1cozz.cutter.task.cutter.CutterTask
 import io.github.tox1cozz.cutter.task.cutterjar.CutterJarTask
+import io.github.tox1cozz.cutter.util.capitalized
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.configurationcache.extensions.capitalized
 import java.io.File
 
 abstract class CutterPlugin : Plugin<Project> {
 
+    // TODO: Добавить методы для всех тасков с типом таргета
     companion object {
 
         const val NAME = "cutter"
