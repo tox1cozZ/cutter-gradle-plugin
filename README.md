@@ -18,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'com.github.tox1cozZ.cutter-gradle-plugin:plugin:master-SNAPSHOT'
+    compileOnly 'com.github.tox1cozZ.cutter-gradle-plugin:tools:master-SNAPSHOT'
 }
 
 cutter {
