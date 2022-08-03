@@ -55,7 +55,7 @@ abstract class CutterTask @Inject constructor(
     }
 
     @get:InputFile
-    @get:PathSensitive(PathSensitivity.ABSOLUTE)
+    @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val archiveFile: RegularFileProperty
 
     @get:Nested

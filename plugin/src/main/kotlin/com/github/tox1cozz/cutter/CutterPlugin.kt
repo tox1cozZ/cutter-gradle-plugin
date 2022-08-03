@@ -25,13 +25,29 @@ abstract class CutterPlugin : Plugin<Project> {
     }
 
     private fun setup(project: Project, extension: CutterExtension) {
+        val jars = extension.jars.get()
+        if (jars.isEmpty()) {
+            project.logger.warn("No Jar task found, so Cutter is inactive. Specify jar with processJar method in 'cutter' configuration.")
+            return
+        }
+
+        val buildTask = project.tasks.getByName("build")
+
         extension.targets.all { target ->
+            if (target.types.isEmpty()) {
+                project.logger.warn("Types in target '${target.name}' not specified.")
+                return@all
+            } else {
+                target.types.filter { it.annotations.get().isEmpty() && it.executors.get().isEmpty() }.forEach {
+                    project.logger.warn("Type '${it.name}' in target '${target.name}' is empty, specify annotations or/and executors.")
+                }
+            }
+
             if (target.cutAlways.get()) {
                 return@all
             }
 
-            val buildTask = project.tasks.getByName("build")
-            extension.jars.get().forEach { jar ->
+            jars.forEach { jar ->
                 val jarTaskName = jar.name
                 val taskPostfix = if (jar.name == "jar") "" else jar.name.capitalized()
                 val cutterDir = File(project.buildDir, NAME)

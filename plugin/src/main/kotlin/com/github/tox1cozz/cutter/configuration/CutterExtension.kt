@@ -16,8 +16,7 @@ abstract class CutterExtension @Inject constructor(private val project: Project)
 
     val validation: Property<Boolean> = project.objects.property(Boolean::class.java).convention(true)
     val verbose: Property<Boolean> = project.objects.property(Boolean::class.java).convention(true)
-    val jars: ListProperty<Jar> = project.objects.listProperty(Jar::class.java)
-        .value(project.provider { listOf(project.tasks.named("jar", Jar::class.java).get()) })
+    val jars: ListProperty<Jar> = project.objects.listProperty(Jar::class.java).empty()
 
     val packages = PatternSet()
 
@@ -34,6 +33,11 @@ abstract class CutterExtension @Inject constructor(private val project: Project)
     }
 
     init {
+        project.tasks.findByName("jar")?.also {
+            if (it is Jar) {
+                jars.add(it)
+            }
+        }
         initDefaultTargets()
     }
 
