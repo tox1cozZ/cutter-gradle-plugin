@@ -28,6 +28,7 @@ tasks.named<ShadowJar>("shadowJar") {
     dependencies {
         exclude(dependency("org.jetbrains:annotations"))
     }
+    minimize()
 }
 
 tasks.named<Jar>("jar") {
