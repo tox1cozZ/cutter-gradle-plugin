@@ -31,18 +31,15 @@ cutter {
         minecraftForgeOnlyIn() // Forge 1.14+
         minecraftFabricEnvironment() // Fabric
     }
-}
-
-afterEvaluate {
-    // Replace string constants in classes
-    tasks.withType(CutterTask) {
+    
+    configureTasks(CutterTask) {
         replaceTokens {
             token '${VERSION}', project.version
         }
     }
 
-    serverJar {
-        excludeMinecraftAssets() // Exclude assets directory (keep lang files)
+    configureServerTasks(CutterJarTask) {
+        excludeMinecraftAssets()
     }
 }
 ```
