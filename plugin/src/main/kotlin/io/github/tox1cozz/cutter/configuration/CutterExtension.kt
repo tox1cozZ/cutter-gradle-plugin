@@ -4,8 +4,10 @@ import groovy.lang.Closure
 import io.github.tox1cozz.cutter.Cutter
 import io.github.tox1cozz.cutter.CutterTarget
 import io.github.tox1cozz.cutter.CutterTargetOnly
+import io.github.tox1cozz.cutter.task.TargetTask
 import org.gradle.api.Action
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.util.PatternSet
@@ -180,6 +182,51 @@ abstract class CutterExtension @Inject constructor(private val project: Project)
             server.types.register(name) {
                 it.registerAnnotation(serverValue)
             }
+        }
+    }
+
+    fun <T> configureClientTasks(
+        taskType: Class<T>,
+        action: Action<T>
+    ) where T : Task, T : TargetTask = configureTasks(TargetConfiguration.CLIENT_NAME, taskType, action)
+
+    fun <T> configureClientTasks(
+        taskType: Class<T>,
+        block: T.() -> Unit
+    ) where T : Task, T : TargetTask = configureTasks(TargetConfiguration.CLIENT_NAME, taskType, block)
+
+    fun <T> configureServerTasks(
+        taskType: Class<T>,
+        action: Action<T>
+    ) where T : Task, T : TargetTask = configureTasks(TargetConfiguration.SERVER_NAME, taskType, action)
+
+    fun <T> configureServerTasks(
+        taskType: Class<T>,
+        block: T.() -> Unit
+    ) where T : Task, T : TargetTask = configureTasks(TargetConfiguration.SERVER_NAME, taskType, block)
+
+    @JvmOverloads
+    fun <T> configureTasks(
+        targetName: String? = null,
+        taskType: Class<T>,
+        block: T.() -> Unit
+    ) where T : Task, T : TargetTask = configureTasks(targetName, taskType) { action -> block(action) }
+
+    @JvmOverloads
+    fun <T> configureTasks(
+        targetName: String? = null,
+        taskType: Class<T>,
+        action: Action<T>
+    ) where T : Task, T : TargetTask {
+        if (targetName != null) {
+            val target = targets.getByName(targetName)
+            project.tasks.withType(taskType) {
+                if (it.target == target) {
+                    action.execute(it)
+                }
+            }
+        } else {
+            project.tasks.withType(taskType, action)
         }
     }
 }

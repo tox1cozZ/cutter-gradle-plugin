@@ -10,7 +10,6 @@ import java.io.File
 
 abstract class CutterPlugin : Plugin<Project> {
 
-    // TODO: Добавить методы для всех тасков с типом таргета
     companion object {
 
         const val NAME = "cutter"
