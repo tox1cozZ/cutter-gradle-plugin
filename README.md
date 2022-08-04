@@ -1,6 +1,8 @@
 # cutter-gradle-plugin
 A Gradle plugin for splitting code into client and server builds.
 
+Requires Gradle 5.6 and newer.
+
 ```
 buildscript {
     repositories {
