@@ -72,7 +72,7 @@ abstract class CutterTask @Inject constructor(
     internal abstract val originalFilesDir: DirectoryProperty
 
     @TaskAction
-    fun execute() {
+    fun process() {
         val archive = archiveFile.get().asFile.toPath()
         val classesDir = targetClassesDir.get().asFile.toPath().also { it.cleanDirectory() }
         val otherFilesDir = originalFilesDir.get().asFile.toPath().also { it.cleanDirectory() }

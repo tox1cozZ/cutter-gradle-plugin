@@ -21,7 +21,7 @@ abstract class CutterJarTask @Inject constructor(
     }
 
     @TaskAction
-    fun execute() {
+    fun process() {
     }
 
     @JvmOverloads
