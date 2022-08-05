@@ -4,6 +4,9 @@ A Gradle plugin for splitting code into client and server builds.
 Requires Gradle 5.6 and newer.
 
 ```
+import io.github.tox1cozz.cutter.task.cutter.CutterTask
+import io.github.tox1cozz.cutter.task.cutterjar.CutterJarTask
+
 buildscript {
     repositories {
         maven { url 'https://jitpack.io' }
